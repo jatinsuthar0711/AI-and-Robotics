@@ -7,3 +7,8 @@ This repository contains my personal robotics projects focusing on AI, robotics,
 ## Projects:
 1. **Robot Arm** - A project to create an AI-controlled robot arm.
 2. **Autonomous Car** - A small autonomous vehicle project using sensors.
+/robot-arm
+/autonomous-car
+git add .
+git commit -m "Updated robot arm code"
+git push
