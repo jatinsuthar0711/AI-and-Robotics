@@ -1,0 +1,116 @@
+pip install pyttsx3 SpeechRecognition pyaudio wikipedia requests pywhatkit
+import pyttsx3
+import speech_recognition as sr
+import wikipedia
+import pywhatkit as kit
+import datetime
+import webbrowser
+import requests
+import os
+
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
+
+# Set up the speech recognition
+recognizer = sr.Recognizer()
+
+# Function for speaking
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+# Function for listening to the microphone
+def listen():
+    with sr.Microphone() as source:
+        print("Listening...")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+    try:
+        print("Recognizing...")
+        query = recognizer.recognize_google(audio, language="en-in")
+        print(f"User said: {query}")
+        return query.lower()
+    except sr.UnknownValueError:
+        print("Sorry, I didn't understand that.")
+        return None
+    except sr.RequestError:
+        print("Sorry, the service is down.")
+        return None
+
+# Function for telling the current time
+def tell_time():
+    current_time = datetime.datetime.now().strftime("%H:%M:%S")
+    speak(f"The time is {current_time}")
+
+# Function to search Wikipedia
+def search_wikipedia(query):
+    try:
+        result = wikipedia.summary(query, sentences=2)
+        speak(result)
+    except wikipedia.exceptions.DisambiguationError as e:
+        speak("I found multiple results, can you be more specific?")
+    except wikipedia.exceptions.HTTPTimeoutError:
+        speak("Sorry, there was an error connecting to Wikipedia.")
+
+# Function to play a YouTube video
+def play_video(query):
+    speak(f"Playing {query} on YouTube")
+    kit.playonyt(query)
+
+# Function to open a website
+def open_website(website):
+    webbrowser.open(f"http://{website}.com")
+    speak(f"Opening {website} website")
+
+# Function to get weather information
+def get_weather(city):
+    try:
+        api_key = "your_openweathermap_api_key"
+        base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
+        response = requests.get(base_url)
+        data = response.json()
+
+        if data["cod"] != "404":
+            weather_info = data["main"]
+            temperature = weather_info["temp"] - 273.15  # Convert from Kelvin to Celsius
+            weather_description = data["weather"][0]["description"]
+            speak(f"The temperature in {city} is {temperature:.2f} degrees Celsius with {weather_description}.")
+        else:
+            speak(f"City {city} not found.")
+    except Exception as e:
+        speak("Sorry, I couldn't fetch the weather details.")
+
+# Main function to control Jarvis
+def jarvis():
+    speak("Hello, I am Jarvis. How can I help you today?")
+    
+    while True:
+        query = listen()
+
+        if query:
+            if 'time' in query:
+                tell_time()
+            elif 'wikipedia' in query:
+                speak("What do you want to know?")
+                topic = listen()
+                search_wikipedia(topic)
+            elif 'play' in query and 'youtube' in query:
+                video_name = query.replace("play", "").replace("on youtube", "").strip()
+                play_video(video_name)
+            elif 'open' in query and 'website' in query:
+                website_name = query.replace("open", "").replace("website", "").strip()
+                open_website(website_name)
+            elif 'weather' in query:
+                speak("Which city's weather do you want to know?")
+                city = listen()
+                get_weather(city)
+            elif 'stop' in query or 'exit' in query:
+                speak("Goodbye!")
+                break
+            else:
+                speak("I didn't understand that. Can you please try again?")
+        else:
+            speak("Sorry, I didn't catch that.")
+
+if __name__ == "__main__":
+    jarvis()
